@@ -345,12 +345,23 @@ def _fetch_edeka(query):
         logger.warning(f"EDeka scraper faalde: {e}")
         return []
 
+def _fetch_jumbo(query):
+    """Jumbo scraper -- haalt producten op via web scraping (API is down)."""
+    try:
+        from jumbo_scraper import fetch_jumbo_products
+        products = fetch_jumbo_products(query)
+        return [{"supermarket": "Jumbo", "code": "jumbo", "products": products}]
+    except Exception as e:
+        logger.warning(f"Jumbo scraper faalde: {e}")
+        return []
+
 def _fetch_lidl(query): return []
 def _fetch_plus(query): return []
 def _fetch_dirk(query): return []
 def _fetch_coop(query): return []
 
 register_store("edeka", "EDEKA", _fetch_edeka)
+register_store("jumbo", "Jumbo", _fetch_jumbo)
 register_store("lidl", "Lidl", _fetch_lidl)
 register_store("plus", "Plus", _fetch_plus)
 register_store("dirk", "Dirk", _fetch_dirk)

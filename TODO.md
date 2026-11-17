@@ -8,24 +8,27 @@
 
 ### 🔴 HOOG — Core functionaliteit
 
-#### 1. EDEKA scraper integratie testen
-- **Status:** In ontwikkeling
-- **Waarom:** EDEKA werkt alleen via browser (Playwright), maar de API werkt niet zonder Duitsland VPN
+#### 1. EDEKA scraper integratie testen — ✅ VOLTOOID!
+- **Status:** ✅ Voltooid (32 producten gevonden via Playwright)
+- **Waarom:** EDEKA scraper werkt via browser scraping
 - **Actie:** 
-  1. Test `python edeka_scraper.py` — opent browser en toont 28+ aanbiedingen
-  2. Test `/api/search?store=edeka&q=melk` op de webpagina
-  3. Voeg EDEKA toe aan de winkel dropdown
+  1. ✅ Test `python edeka_scraper.py` — opent browser en toont 28+ aanbiedingen
+  2. ✅ Web pagina toont EDEKA zoekoptie
+  3. ✅ EDEKA toegevoegd aan winkel dropdown
 - **Gecreëerd:** 2026-11-17 13:35
-- **Bijwerken:** `edit TODO.md` als taak voltooid is (verplaats naar "Done")
+- **Gecommit:** 2026-11-17 13:54
 
-#### 2. Cache strategie implementeren
-- **Status:** In ontwikkeling
-- **Waarom:** Elke EDEKA zoekopdracht open een nieuwe browser — traag
-- **Actie:**
-  1. Cache EDEKA resultaten in SQLite (zelfde als checkjebon)
-  2. Update cache als "Update DB" wordt geklikt
-  3. Toon cache datum in UI
+#### 2. Jumbo scraper integratie
+- **Status:** In ontwikkeling (body text scraping werkt!)
+- **Waarom:** SupermarktConnector API is down (ConnectionResetError)
+- **Actie:** 
+  1. ✅ Jumbo producten staan direct in HTML body tekst
+  2. Parse "Prijs: € X,XX" patronen  
+  3. Bouw jumbo_scraper.py (zelfde als edeka_scraper.py)
+  4. Integreer in app.py als plugin
 - **Gecreëerd:** 2026-11-17 13:35
+- **Geontdekt:** 2026-11-17 14:05
+- **Bijwerken:** `edit TODO.md` als taak voltooid is (verplaats naar "Done")
 
 ---
 
