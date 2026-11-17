@@ -14,6 +14,8 @@
                 <option value="all">Alle winkels</option>
                 <option value="local">Gecachte data (snel)</option>
                 <option value="jumbo">Jumbo (live API)</option>
+                <option value="jumbo_scraper">Jumbo (web scraping)</option>
+                <option value="edeka">EDEKA (Tübingen)</option>
             </select>
             <button type="submit">Zoeken</button>
             <button type="button" id="updateBtn" class="btn-update">🔄 Update DB</button>
@@ -120,13 +122,17 @@ function renderResults(query, results) {
         html += `<div class="sm-card"><h3>${escHtml(r.supermarket)}</h3>`;
         html += `<div class="products-grid">`;
         r.products.forEach(p => {
-            html += `<div class="product-card">`;
-            if (p.image) html += `<img src="${p.image}" alt="" loading="lazy" />`;
+            html += `<div class="product-card" onclick="location.href='/product/${p.id || 0}'">`;
+            if (p.cached_image) html += `<img src="${p.cached_image}" alt="" loading="lazy" />`;
+            else if (p.image) html += `<img src="${p.image}" alt="" loading="lazy" />`;
             html += `<h4>${escHtml(p.name || 'Onbekend')}</h4>`;
             html += `<div class="p-details">`;
             if (p.amount) html += `<span class="amount">${escHtml(p.amount)}</span>`;
             if (p.price) html += `<span class="price">€${Number(p.price).toFixed(2)}</span>`;
+            if (p.unit_price) html += `<span class="unit-price">(/ €${Number(p.unit_price).toFixed(2)})</span>`;
             if (p.isEstimate) html += `<span class="badge">geschat</span>`;
+            if (p.discount) html += `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">${escHtml(p.discount)}</span>`;
+            if (p.normal_price) html += `<span class="unit-price" style="text-decoration:line-through;">€${Number(p.normal_price).toFixed(2)}</span>`;
             html += `</div>`;
             if (p.link) html += `<a href="${p.link}" target="_blank" class="link">Bekijk →</a>`;
             html += `</div>`;

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — Detail{% endblock %}
+
+{% block extra_head %}
+<style>
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .detail-image { width: 100%; max-height: 400px; object-fit: contain; border-radius: var(--radius); background: var(--surface); padding: 1rem; }
+    .detail-info h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .detail-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .detail-price { font-size: 2rem; font-weight: 700; color: var(--primary); }
+    .detail-amount { font-size: 1.1rem; color: var(--text-light); }
+    .price-history-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .price-history-table th, .price-history-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-align: left; }
+    .price-history-table th { background: #f5f5f5; font-weight: 600; }
+    .price-row { cursor: pointer; transition: background 0.15s; }
+    .price-row:hover { background: #f0f0f0; }
+    .price-up { color: #c62828; }
+    .price-down { color: #2e7d32; }
+    .similar-section { margin-top: 2rem; }
+    .similar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .similar-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; cursor: pointer; transition: box-shadow 0.2s; }
+    .similar-card:hover { box-shadow: var(--shadow); }
+    .similar-card h4 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .best-deal { position: absolute; top: 0.5rem; right: 0.5rem; background: var(--primary); color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; }
+    .sm-col-group { margin-top: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="detail-grid">
+        <!-- Left: Image -->
+        <div>
+            {% if product.cached_image %}
+            <img class="detail-image" src="{{ product.cached_image }}" alt="{{ product.name }}" />
+            {% else %}
+            <div class="detail-image" style="display:flex;align-items:center;justify-content:center;color:var(--text-light);">
+                <p>🖼️ Geen afbeelding beschikbaar</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right: Info -->
+        <div class="detail-info">
+            <h2>{{ product.name }}</h2>
+            <div class="detail-meta">
+                {% if product.amount %}<span class="amount">{{ product.amount }}</span>{% endif %}
+                {% if product.category %}<span class="badge">{{ product.category }}</span>{% endif %}
+                <span class="badge" style="background:#e8f5e9;color:#2e7d32;">{{ product.supermarket }}</span>
+            </div>
+            
+            <div class="detail-price">€{{ "%.2f"|format(product.price) }}</div>
+            
+            {% if product.link %}
+            <a href="{{ product.link }}" target="_blank" class="link" style="margin-top:1rem;">
+                Bekijk bij {{ product.supermarket }} →
+            </a>
+            {% endif %}
+            
+            <a href="/" style="display:block;margin-top:1rem;font-size:0.9rem;color:var(--text-light);">
+                ← Terug naar zoeken
+            </a>
+        </div>
+    </div>
+    
+    <!-- Price History -->
+    <div class="sm-card" style="margin-top:2rem;">
+        <h3>📊 Prijs Geschiedenis (laatste 30 dagen)</h3>
+        {% if price_history %}
+        <div class="price-history-table">
+            <tr><th>Winkel</th><th>Prijs</th><th>Hoeveelheid</th><th>Gewijzigd</th></tr>
+            {% for store, items in price_history.items() %}
+            {% for item in items[:10] %}
+            <tr class="price-row" onclick="window.location.href='/product/{{ item.id }}'">
+                <td>{{ item.supermarket }}</td>
+                <td>€{{ "%.2f"|format(item.price) }}</td>
+                <td>{{ item.amount or '—' }}</td>
+                <td>{{ item.updated_at[:16].replace('T', ' om ') }}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--text-light);margin-top:1rem;">Geen prijsgeschiedenis beschikbaar.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Similar Products -->
+    <div class="similar-section">
+        <h3>🔄 Vergelijkbare producten in andere winkels</h3>
+        {% if similar %}
+        <div class="similar-grid">
+            {% for s in similar %}
+            <div class="similar-card" onclick="window.location.href='/product/{{ s.id }}'">
+                <span class="badge" style="display:block;margin-bottom:0.3rem;">{{ s.supermarket }}</span>
+                <h4>{{ s.name }}</h4>
+                <span class="price">€{{ "%.2f"|format(s.price) }}</span>
+                {% if s.amount %}<span class="amount">{{ s.amount }}</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--text-light);">Geen vergelijkbare producten gevonden.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

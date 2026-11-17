@@ -5,27 +5,31 @@ Webapp om supermarkt aanbiedingen te vergelijken — lokaal op je computer.
 ## ⚡ Snel Starten
 
 ```bash
-pip install flask requests supermarktconnector
+pip install flask requests playwright
+playwright install chromium
 python app.py
 # Open http://localhost:9090
 ```
 
 ## 📦 Features
 
-- **12+ winkels** direct beschikbaar via checkjebon data (gecacheerd in SQLite)
-- **Lokale SQLite database** — je data blijft lokaal
-- **Prijsvergelijking** tussen meerdere winkels
+- **12+ winkels** gecached in SQLite (checkjebon data)
+- **Lokale database** — je data blijft op je computer (~106.000 producten)
+- **Jumbo web scraping** — producten, prijzen, hoeveelheden en afbeeldingen
+- **EDEKA web scraping** — aanbiedingen, kortingen en normale prijzen
+- **Product detail pagina** met prijsgeschiedenis en vergelijkbare producten
 - **Uitbreidbaar** — voeg nieuwe winkels toe via plugins
+- **Responsive design** — werkt op mobiel en desktop
 
 ## 🏪 Beschikbare Winkels
 
-### ✅ Direct beschikbaar (gecacheerd in SQLite)
+### ✅ Direct beschikbaar (gecacheerd)
 
 | Winkel | Data bron |
 |--------|-----------|
 | **Albert Heijn** | checkjebon |
 | **Aldi** | checkjebon |
-| **Jumbo** | checkjebon + live API |
+| **Jumbo** | checkjebon + web scraping |
 | **Plus** | checkjebon |
 | **Dirk** | checkjebon |
 | **Coop** | checkjebon |
@@ -35,66 +39,43 @@ python app.py
 | **Hoogvliet** | checkjebon |
 | **Jan Linders** | checkjebon |
 | **DekaMarkt** | checkjebon |
-
-> ~106.000+ producten lokaal gekaakt!
-
-### 🔜 Nieuw: EDEKA (Duitsland)
-
-EDEKA connector is beschikbaar via `edeka_connector.py` maar vereist:
-- **VPN naar Duitsland** (API is geografisch geblokkeerd)
-- of een **Duitse proxy**
-
-**Hoe te activeren:**
-1. Zet een VPN op naar Duitsland
-2. Herstart `python app.py`
-3. EDEKA verschijnt nu bij de zoekopties
-
-De connector haalt huidige aanbiedingen op van:
-- **EDEKA Markte Tübingen** (GLN: 4314021182307) — jouw markt
-- Of elke andere EDEKA winkel met een bekende GLN
+| **EDEKA** | web scraping (Tübingen) |
 
 ## 📁 Projectstructuur
 
 ```
 aanbiedingen/
-├── app.py                    # Flask webapp (主 program)
-├── edeka_connector.py        # EDEKA API connector (optional)
-├── requirements.txt          # Dependencies
+├── app.py                    # Flask webapp
+├── edeka_scraper.py          # EDEKA web scraper (Playwright)
+├── jumbo_scraper.py          # Jumbo web scraper (Playwright)
+├── TODO.md                   # Takenplan
 ├── data/
-│   └── aanbiedingen.db       # SQLite database (wordt automatisch aangemaakt)
+│   ├── aanbiedingen.db       # SQLite database
+│   └── product-images/       # Gecachte product afbeeldingen
 ├── templates/
 │   ├── base.html             # Hoofd sjabloon
 │   ├── index.html            # Zoekpagina
 │   ├── compare.html          # Prijsvergelijking
 │   ├── history.html          # Geschiedenis
-│   └── stores.html           # Winkels + database info
+│   ├── stores.html           # Winkels info
+│   ├── product.html          # Product detail pagina
+│   └── 404.html              # Fout pagina
 └── static/css/
     └── style.css             # Styling
 ```
 
-## 🔌 Eigen winkel toevoegen
+## 🔌 Plugins toevoegen
 
 ```python
-# In app.py, boven "if __name__":
-
 def fetch_jouw_winkel(query):
-    # Haal producten op van jouw_winkel.nl/aanbiedingen
     return [{"name": "Product", "price": 1.99, "amount": "500g"}]
 
 register_store("jouwcode", "Jouw Winkel", fetch_jouw_winkel)
 ```
 
-Dan is de winkel direct beschikbaar in de webapp!
+## 🛠️ Ondersteunde Winkels
 
-## 🛠️ Ondersteunde Winkels (API bronnen)
-
-| Source | Winkels | Python lib |
-|--------|---------|------------|
-| **checkjebon** | 12+ Nederlandse winkels | checkjebon open data |
-| **SupermarktConnector** | AH, Jumbo | supermarktconnector package |
-| **EDEKA** (Germany) | Alle EDEKA markten | edeka_connector.py |
-
-## 📝 Licentie
-
-Project code: MIT
-Data: checkjebon (MIT), SupermarktConnector (MIT)
+| Source | Winkels |
+|--------|---------|
+| **checkjebon** | 12+ Nederlandse winkels |
+| **Playwright** | Jumbo, EDEKA (web scraping) |

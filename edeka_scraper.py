@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"
+"""
 EDEKA Web Scraper -- Haalt aanbiedingen op van de EDEKA website.
 Gebruikt Playwright om de HTML pagina te renderen en aanbiedingen te parsen.
 
@@ -7,7 +7,7 @@ Deze aanpak werkt omdat:
 1. De EDEKA website de folder data direct in de HTML injecteert
 2. Geen API calls nodig -- alles staat al in de pagina broncode
 3. Werkt buiten Duitsland -- alleen Cloudflare blokkeert headless browsers
-"
+"""
 
 from playwright.sync_api import sync_playwright
 import re
@@ -15,14 +15,14 @@ import re
 
 def fetch_edeka_offers(query="", market_url="https://www.edeka.de/"):
     """
-    Haal huidige EDEKA aanbiedingen op door de website te scrapen.
+    Haal huidige EDEKA aanbiedingen op door de website te scrappen.
     
     Args:
         query: Optionele zoekterm (wordt gefilterd na ophalen)
         market_url: URL van EDEKA markt pagina (standaard: hoofdpagina)
     
     Returns:
-        List van dicts met producten in standaard formaat
+        List van dicts met producten (standaard formaat)
     """
     products = []
     
@@ -44,7 +44,7 @@ def fetch_edeka_offers(query="", market_url="https://www.edeka.de/"):
             
             body = page.inner_text('body')
             
-            # Parse "Angebot:" blokken
+            # ---- Methode 1: "Angebot:" blokken parsen ----
             blocks = re.split(r'Angebot:\s*\n', body)
             
             for block in blocks[1:]:
@@ -52,7 +52,8 @@ def fetch_edeka_offers(query="", market_url="https://www.edeka.de/"):
                 name = lines[0].strip() if len(lines) > 0 else ""
                 
                 # Filter niet-product items
-                skip_words = ['Gültig', 'Wähle', 'Markt', 'Geschenk']
+                skip_words = ['Gültig', 'Wähle', 'Markt', 'Geschenk', 
+                              'Klicken', 'Schließen', 'Banner']
                 if not name or any(sw in name for sw in skip_words):
                     continue
                 
@@ -94,7 +95,7 @@ def fetch_edeka_offers(query="", market_url="https://www.edeka.de/"):
                         price = float(apppreis.group(1).replace(',', '.'))
                         continue
                 
-                # Beschrijving extracten
+                # Beschrijving extracten (voor amount/category)
                 desc_parts = []
                 for line in lines:
                     line = line.strip()
@@ -114,15 +115,41 @@ def fetch_edeka_offers(query="", market_url="https://www.edeka.de/"):
                         "description": desc,
                     })
             
+            # ---- Methode 2: Fallback — prijs patronen ----
+            if not products:
+                products = _parse_price_patterns(body)
+            
             # Filter op query
             if query:
                 query_lower = query.lower()
                 products = [p for p in products 
                            if query_lower in p["name"].lower() 
-                           or query_lower in p["description"].lower()]
+                           or query_lower in p.get("description", "").lower()]
             
         finally:
             browser.close()
+    
+    return products
+
+
+def _parse_price_patterns(body):
+    """Fallback: parse 'Prijs: € X,XX' patronen uit body tekst."""
+    products = []
+    blocks = re.split(r'€\s*([\d.,]+)', body)
+    
+    for i in range(1, len(blocks), 2):
+        price = float(blocks[i].replace(',', '.'))
+        name = blocks[i-1].strip()
+        
+        # Skip korte/ongeldige namen
+        skip_words = {'Gültig', 'Wähle', 'Markt'}
+        if len(name) < 5 or any(sw in name for sw in skip_words):
+            continue
+        
+        products.append({
+            "name": name.strip(),
+            "price": price,
+        })
     
     return products
 
