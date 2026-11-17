@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Winkels{% endblock %}
+
+{% block content %}
+<h1>Beschikbare Winkels</h1>
+
+<p>Kies een winkel of update de database met nieuwste data.</p>
+
+<div style="margin-bottom: 1.5rem;">
+    <button id="updateAllBtn" class="btn-primary" onclick="updateAll()">📥 Update alle data</button>
+    <span id="updateStatus" class="db-badge" style="margin-left: 1rem;"></span>
+</div>
+
+<div class="stores-grid">
+    {% for store in stores %}
+    <div class="store-card">
+        <h3>{{ store.name }}</h3>
+        <p class="store-desc">{{ store.desc }}</p>
+        {% if store.status == 'coming-soon' %}
+        <span class="badge coming-soon">🔜 Wordt toegevoegd</span>
+        {% else %}
+        <span class="badge" style="background:#e8f5e9;color:#2e7d32;">✅ Beschikbaar</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% if db_status %}
+<div class="db-overview">
+    <h3>📦 Lokale Database</h3>
+    <p><strong>Locatie:</strong> <code>{{ db_status.db_file }}</code></p>
+    <p><strong>Totaal producten:</strong> {{ db_status.total_products }}</p>
+
+    {% if db_status.updates and db_status.updates|length > 0 %}
+    <table class="update-table">
+        <tr><th>Winkel</th><th>Producten</th><th>Laatst geupdate</th></tr>
+        {% for u in db_status.updates %}
+        <tr>
+            <td>{{ u.supermarket }}</td>
+            <td>{{ u.product_count }}</td>
+            <td>{{ u.updated_at[:19].replace('T', ' ') }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="add-store-box">
+    <h3>🏪 Eigen winkel toevoegen</h3>
+    <p>Wil je een andere supermarkt toevoegen (EDEKA, Lidl, Plus, etc.)?</p>
+    <pre>
+def fetch_mijn_winkel(query):
+    # Haal producten op van mijn_winkel.nl/aanbiedingen
+    return [{"name": "Productnaam", "price": 1.99, "amount": "500g"}]
+
+# In app.py, boven "if __name__":
+register_store("mijnwinkel", "Mijn Winkel", fetch_mijn_winkel)
+    </pre>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Geschiedenis{% endblock %}
+
+{% block content %}
+<h1>Prijs Geschiedenis</h1>
+
+{% if comparisons and comparisons|length > 0 %}
+<div class="history-list">
+    {% for comp in comparisons %}
+    <div class="history-item">
+        <div class="h-header">
+            <span class="h-date">{{ comp.timestamp[:16].replace('T', ' om ') }}</span>
+            <span class="h-products">{{ comp.products|replace('["','')|replace('"]','')|replace('"','')|replace(',','') }}</span>
+        </div>
+        <span class="h-count">{{ comp.results_count }} winkels getraffeld</span>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Nog geen prijsvergelijkingen.</p>
+    <p>Zoek een product om je eerste vergelijking te maken!</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Zoek Aanbiedingen{% endblock %}
+
+{% block content %}
+<h1>Zoek Aanbiedingen</h1>
+
+<div class="search-section">
+    <form id="searchForm">
+        <div class="search-input-group">
+            <input type="text" id="searchInput" name="q"
+                   placeholder="Bijv. melk, roomboter, cola, bananen..."
+                   autocomplete="off" required />
+            <select id="storeFilter">
+                <option value="all">Alle winkels</option>
+                <option value="local">Gecachte data (snel)</option>
+                <option value="jumbo">Jumbo (live API)</option>
+            </select>
+            <button type="submit">Zoeken</button>
+            <button type="button" id="updateBtn" class="btn-update">🔄 Update DB</button>
+        </div>
+    </form>
+    <div id="dbInfo" class="db-info"></div>
+</div>
+
+<div id="results" class="results"></div>
+<div id="loading" class="loading" style="display:none;">
+    <div class="spinner"></div>
+    <p>zoeken...</p>
+</div>
+
+<script>
+const form = document.getElementById('searchForm');
+const input = document.getElementById('searchInput');
+const filter = document.getElementById('storeFilter');
+const resultsDiv = document.getElementById('results');
+const loading = document.getElementById('loading');
+const dbInfo = document.getElementById('dbInfo');
+const updateBtn = document.getElementById('updateBtn');
+
+// Laad DB status
+loadDbStatus();
+
+function loadDbStatus() {
+    fetch('/api/db-status')
+        .then(r => r.json())
+        .then(d => {
+            let html = `<span class="db-badge">📦 ${d.total_products} producten in cache</span>`;
+            if (d.updates && d.updates.length > 0) {
+                d.updates.forEach(u => {
+                    const since = timeAgo(u.updated_at);
+                    html += ` <span class="db-badge">${u.supermarket}: ${u.product_count} producten (${since})</span>`;
+                });
+            }
+            dbInfo.innerHTML = html;
+        })
+        .catch(() => {});
+}
+
+updateBtn.addEventListener('click', async () => {
+    updateBtn.disabled = true;
+    updateBtn.textContent = '⏳ Updaten...';
+    try {
+        const resp = await fetch('/admin/update', { method: 'POST' });
+        const d = await resp.json();
+        if (d.ok) {
+            updateBtn.textContent = `✅ ${d.products} producten!`;
+            loadDbStatus();
+            setTimeout(() => updateBtn.textContent = '🔄 Update DB', 2000);
+        }
+    } catch(e) {
+        updateBtn.textContent = '❌ Fout';
+        setTimeout(() => updateBtn.textContent = '🔄 Update DB', 2000);
+    }
+    updateBtn.disabled = false;
+});
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    const store = filter.value;
+    if (!q) return;
+
+    resultsDiv.innerHTML = '';
+    loading.style.display = 'block';
+
+    try {
+        const resp = await fetch(`/api/search?q=${encodeURIComponent(q)}&store=${store}`);
+        const data = await resp.json();
+        loading.style.display = 'none';
+
+        if (data.error) {
+            resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+            return;
+        }
+
+        renderResults(data.query, data.results);
+    } catch (err) {
+        loading.style.display = 'none';
+        resultsDiv.innerHTML = `<div class="error">Fout: ${err.message}</div>`;
+    }
+});
+
+function renderResults(query, results) {
+    if (!results || results.length === 0) {
+        resultsDiv.innerHTML = `
+            <div class="empty-state">
+                <p>Geen resultaten voor "<strong>${escHtml(query)}</strong>"</p>
+                <p class="hint">Tip: Update de database met de "Update DB" knop voor nieuwste data.</p>
+            </div>`;
+        return;
+    }
+
+    let html = `<div class="result-header"><p>Resultaten voor "<strong>${escHtml(query)}</strong>"</p></div>`;
+
+    let totalProducts = 0;
+    results.forEach(r => totalProducts += (r.products?.length || 0));
+    html += `<div class="result-count">— ${totalProducts} producten</div>`;
+
+    results.filter(r => r.products && r.products.length > 0).forEach(r => {
+        html += `<div class="sm-card"><h3>${escHtml(r.supermarket)}</h3>`;
+        html += `<div class="products-grid">`;
+        r.products.forEach(p => {
+            html += `<div class="product-card">`;
+            if (p.image) html += `<img src="${p.image}" alt="" loading="lazy" />`;
+            html += `<h4>${escHtml(p.name || 'Onbekend')}</h4>`;
+            html += `<div class="p-details">`;
+            if (p.amount) html += `<span class="amount">${escHtml(p.amount)}</span>`;
+            if (p.price) html += `<span class="price">€${Number(p.price).toFixed(2)}</span>`;
+            if (p.isEstimate) html += `<span class="badge">geschat</span>`;
+            html += `</div>`;
+            if (p.link) html += `<a href="${p.link}" target="_blank" class="link">Bekijk →</a>`;
+            html += `</div>`;
+        });
+        html += `</div></div>`;
+    });
+
+    results.filter(r => !r.products || r.products.length === 0).forEach(r => {
+        html += `<div class="sm-card"><h3>${escHtml(r.supermarket)}</h3><p class="no-products">⏳ Geen data</p></div>`;
+    });
+
+    resultsDiv.innerHTML = html;
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function timeAgo(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 60) return 'zojuist';
+    if (diff < 3600) return Math.floor(diff/60) + ' min geleden';
+    if (diff < 86400) return Math.floor(diff/3600) + ' uur geleden';
+    return d.toLocaleDateString('nl-NL');
+}
+
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') form.dispatchEvent(new Event('submit')); });
+</script>
+{% endblock %}
