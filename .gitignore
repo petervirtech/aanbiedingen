@@ -51,3 +51,8 @@ data/*.json.gz
 
 # Pipenv
 Pipfile.lock
+
+# Obscura browser binary (download from releases, not committed)
+obscura-aarch64-macos.tar.gz
+obscura
+obscura-worker

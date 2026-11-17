@@ -588,7 +588,7 @@ def search_plugin(query, store_code):
 
 # TODO plugins
 def _fetch_edeka(query):
-    """EDEKA scraper -- haalt aanbiedingen op van edeka.de website."""
+    """EDEKA scraper -- haalt aanbiedingen op van edeka.de website (Playwright)."""
     try:
         from edeka_scraper import fetch_edeka_offers
         products = fetch_edeka_offers(query)
@@ -607,13 +607,51 @@ def _fetch_jumbo(query):
         logger.warning(f"Jumbo scraper faalde: {e}")
         return []
 
+def _fetch_edeka_obscura(query):
+    """EDEKA scraper via Obscura (Rust-based headless browser) — als fallback Playwright."""
+    try:
+        from edeka_scraper_obscura import fetch_edeka_offers
+        products = fetch_edeka_offers(query)
+        if products:
+            return [{"supermarket": "EDEKA (Tübingen via Obscura)", "code": "edeka_obscura", "products": products}]
+    except Exception as e:
+        logger.warning(f"EDeka Obscura scraper faalde, probeer Playwright: {e}")
+    # Fallback naar Playwright-versie
+    try:
+        from edeka_scraper import fetch_edeka_offers
+        products = fetch_edeka_offers(query)
+        return [{"supermarket": "EDEKA (Tübingen via Playwright)", "code": "edeka", "products": products}]
+    except Exception as e2:
+        logger.warning(f"EDeka Playwright fallback faalde ook: {e2}")
+        return []
+
+def _fetch_jumbo_obscura(query):
+    """Jumbo scraper via Obscura (Rust-based headless browser) — als fallback Playwright."""
+    try:
+        from jumbo_scraper_obscura import fetch_jumbo_products
+        products = fetch_jumbo_products(query)
+        if products:
+            return [{"supermarket": "Jumbo (via Obscura)", "code": "jumbo_obscura", "products": products}]
+    except Exception as e:
+        logger.warning(f"Jumbo Obscura scraper faalde, probeer Playwright: {e}")
+    # Fallback naar Playwright-versie
+    try:
+        from jumbo_scraper import fetch_jumbo_products
+        products = fetch_jumbo_products(query)
+        return [{"supermarket": "Jumbo (via Playwright)", "code": "jumbo", "products": products}]
+    except Exception as e2:
+        logger.warning(f"Jumbo Playwright fallback faalde ook: {e2}")
+        return []
+
 def _fetch_lidl(query): return []
 def _fetch_plus(query): return []
 def _fetch_dirk(query): return []
 def _fetch_coop(query): return []
 
 register_store("edeka", "EDEKA", _fetch_edeka, "EDEKA Tübingen aanbiedingen (via browser scraping)")
-register_store("jumbo_scraper", "Jumbo (web)", _fetch_jumbo, "Jumbo producten (via browser scraping)")
+register_store("edeka_obscura", "EDEKA (Obscura)", _fetch_edeka_obscura, "EDEKA Tübingen (via Obscura + Playwright fallback)")
+register_store("jumbo", "Jumbo (web)", _fetch_jumbo, "Jumbo producten (via browser scraping)")
+register_store("jumbo_obscura", "Jumbo (Obscura)", _fetch_jumbo_obscura, "Jumbo producten (via Obscura + Playwright fallback)")
 register_store("lidl", "Lidl", _fetch_lidl, "Lidl — coming soon")
 register_store("plus", "Plus", _fetch_plus, "Plus — coming soon")
 register_store("dirk", "Dirk", _fetch_dirk, "Dirk — coming soon")
@@ -677,7 +715,10 @@ def api_store_list():
         {"code": "jumbo", "name": "Jumbo (live API)", "desc": "Directe API van Jumbo.com"},
     ]
     for code, info in _store_plugins.items():
-        stores.append({"code": code, "name": info["name"], "desc": info["desc"], "status": "coming-soon"})
+        status = "coming-soon"
+        if "Obscura" in info["name"]:
+            status = "available"
+        stores.append({"code": code, "name": info["name"], "desc": info["desc"], "status": status})
     return jsonify({"stores": stores})
 
 

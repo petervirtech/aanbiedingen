@@ -34,6 +34,15 @@
 - 📝 Notificatie als product in lijst daalt
 - 📝 Database schema ontbreekt
 
+### Obscura integratie ✅
+- ✅ Obscura browser geïnstalleerd en getest (v0.2.7)
+- ✅ `edeka_scraper_obscura.py` — EDEKA scraper met Obscura + Playwright fallback
+- ✅ `jumbo_scraper_obscura.py` — Jumbo scraper met Obscura + Playwright fallback
+- ✅ Plugins geregistreerd in `app.py` (`edeka_obscura`, `jumbo_obscura`)
+- ✅ `obscura.md` documentatie geschreven
+- ✅ Obscura geïntegreerd in store-list API met status
+- 🔄 Stealth mode testen tegen Cloudflare-protected sites
+
 ## 🟢 Te doen
 
 - 📝 Responsive design tests
